@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Mon Extension de Remplissage Automatique",
+  "name": "Mon Extension de Remplissage ",
   "version": "1.0",
   "description": "Une extension pour remplir automatiquement les formulaires",
-  "permissions": ["activeTab"],
+  "permissions": ["activeTab", "scripting"] ,
   "action": {
     "default_popup": "index.html"
 

@@ -1,36 +1,31 @@
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  standalone: true,
+  styleUrls: ['./app.component.css']
+})
 export class AppComponent {
-  constructor() {
-    // Écouter l'événement click sur le bouton pour remplir le formulaire
-    document.addEventListener('DOMContentLoaded', this.onDOMContentLoaded.bind(this));
-  }
+  onFillDataClick() {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id as number },
+        func: fillForm,
 
-  onDOMContentLoaded(): void {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs: { id: any; }[]) => {
-      // Récupérer l'ID de l'onglet actif
-      const tabId = tabs[0]?.id;
-
-      if (tabId) {
-        // Injecter le script dans la page Web actuelle
-        chrome.tabs.executeScript(tabId, { code: this.fillFormScript });
-      }
+      });
     });
-  }
 
-  fillFormScript = `
-    const formData = {
-      date: '20/02/1998',
-      date2: '20/02/1999',
-    };
+    function fillForm() {
+      const inputSelectors = ['input[name="ctl00$body$date_misecirculation"]', 'input[name="ctl00$body$date_acquisition"]'];
+      const values = ['20/02/1998', '20/02/1998'];
 
-    const usernameField = document.querySelector('input[name="ctl00$body$date_misecirculation"]');
-    const passwordField = document.querySelector('input[name="ctl00$body$date_acquisition"]');
-
-    console.log(usernameField);
-    console.log(passwordField);
-
-    if (usernameField && passwordField) {
-      usernameField.value = formData.date;
-      passwordField.value = formData.date2;
+      inputSelectors.forEach((selector, index) => {
+        const input = document.querySelector(selector) as HTMLInputElement;
+        if (input) {
+          input.value = values[index];
+        }
+      });
     }
-  `;
+  }
 }
