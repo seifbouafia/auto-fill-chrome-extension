@@ -1,11 +1,18 @@
 {
   "manifest_version": 3,
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "seifbouafia340@gmail.com"
+    }
+  },
   "name": "Mon Extension de Remplissage ",
   "version": "1.0",
   "description": "Une extension pour remplir automatiquement les formulaires",
-  "permissions": ["activeTab", "scripting"] ,
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
   "action": {
     "default_popup": "index.html"
-
   }
 }

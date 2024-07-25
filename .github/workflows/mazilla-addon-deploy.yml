@@ -1,0 +1,35 @@
+name: Deploy to Mozilla Add-ons
+
+on:
+  push:
+    tags:
+      - 'v*' # Déclenche le workflow pour les tags commençant par 'v'
+
+jobs:
+  build-and-submit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build extension
+        run: npm run build # Assurez-vous d'avoir une commande de build définie dans votre package.json
+
+      - name: Create ZIP file
+        run: zip -r extension.zip . -x '*.git*'
+
+      - name: Submit to Mozilla Add-ons
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          npm install --global web-ext
+          web-ext sign --source-dir ./ --artifacts-dir ./web-ext-artifacts/
