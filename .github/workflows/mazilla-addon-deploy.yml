@@ -25,16 +25,16 @@ jobs:
 
       - name: Verify manifest.json presence
         run: |
-          if [ ! -f "dist/manifest.json" ]; then
+          if [ ! -f "dist/browser/manifest.json" ]; then
             echo "Error: manifest.json not found in the build output directory."
             exit 1
           fi
 
       - name: Create ZIP file
         run: |
-          cd dist
-          zip -r ../extension.zip . -x '*.git*'
-          cd ..
+          cd dist/browser
+          zip -r ../../extension.zip . -x '*.git*'
+          cd ../../
 
       - name: Submit to Mozilla Add-ons
         env:
@@ -42,4 +42,4 @@ jobs:
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
         run: |
           npm install --global web-ext
-          web-ext sign --source-dir ./dist --artifacts-dir ./web-ext-artifacts/
+          web-ext sign --source-dir ./dist/browser --artifacts-dir ./web-ext-artifacts/
