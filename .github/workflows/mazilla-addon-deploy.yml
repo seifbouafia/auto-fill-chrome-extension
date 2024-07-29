@@ -3,11 +3,17 @@ name: Deploy to Mozilla Add-ons
 on:
   push:
     tags:
-      - 'v*' # Déclenche le workflow pour les tags commençant par 'v'
+      - 'v*'
+
+env:
+  NODE_VERSION: '18'
+  PROJECT_NAME: autofill-form
 
 jobs:
-  build-and-submit:
+  Build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.VERSION }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -15,21 +21,43 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
         run: npm ci
 
       - name: Build extension
-        run: npm run build # Assurez-vous d'avoir une commande de build définie dans votre package.json
+        run: npm run build
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
       - name: Create ZIP file
-        run: zip -r extension.zip . -x '*.git*'
+        run: |
+          cd dist/grat-extension/browser
+          zip -r ../../../${{ env.PROJECT_NAME }}-${{ steps.get_version.outputs.VERSION }}.zip .
 
-      - name: Submit to Mozilla Add-ons
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension
+          path: ${{ env.PROJECT_NAME }}-${{ steps.get_version.outputs.VERSION }}.zip
+
+  Firefox:
+    needs: Build
+    name: Submit to Firefox Add-ons
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension
+
+      - name: Sign and submit to Firefox Add-ons
+        run: |
+          unzip ${{ env.PROJECT_NAME }}-${{ needs.Build.outputs.version }}.zip -d extension_dir
+          npm install --global web-ext
+          web-ext sign --channel listed --source-dir ./extension_dir
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
-        run: |
-          npm install --global web-ext
-          web-ext sign --source-dir ./ --artifacts-dir ./web-ext-artifacts/
