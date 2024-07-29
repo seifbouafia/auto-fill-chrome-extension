@@ -2,7 +2,7 @@ name: Release Autofill-Form Extension
 on:
   workflow_dispatch:
   push:
-    branches: [ ramzi-deployement ]
+    branches: [ 1-ramzi-deployement ]
 
 env:
   DIRECTORY: dist
