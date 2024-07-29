@@ -29,12 +29,17 @@ jobs:
         run: ls -R $DIRECTORY
       - name: Update manifest.json
         run: |
-          if [ -f "$DIRECTORY/manifest.json" ]; then
-            sed -i 's/"version":.*/"version": "${{ steps.create_version.outputs.version }}",/' $DIRECTORY/manifest.json
+          MANIFEST_PATH="$DIRECTORY/grat-extension/browser/manifest.json"
+          if [ -f "$MANIFEST_PATH" ]; then
+            sed -i 's/"version":.*/"version": "${{ steps.create_version.outputs.version }}",/' "$MANIFEST_PATH"
+            echo "Updated manifest.json version to ${{ steps.create_version.outputs.version }}"
           else
-            echo "Error: $DIRECTORY/manifest.json not found"
+            echo "Error: $MANIFEST_PATH not found"
             exit 1
           fi
+        env:
+          DIRECTORY: dist
+          PROJECT_NAME: autofill-form
       - name: Package extension
         run: |
           cd $DIRECTORY
