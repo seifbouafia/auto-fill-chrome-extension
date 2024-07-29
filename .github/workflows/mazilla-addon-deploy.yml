@@ -1,36 +1,40 @@
-name: Deploy Firefox Extension
+name: Deploy to Mozilla Add-ons
 
 on:
   push:
     branches: [ deploy-on-addons ]
 
 jobs:
-  build:
+  build-and-submit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build the extension
+      - name: Build extension
         run: npm run build
 
-      - name: Package the extension
-        run: |
-          cd dist/grat-extension
-          zip -r ../../extension.zip .
+      - name: Debug build output
+        run: ls -R dist
 
-      - name: Upload the extension
-        uses: mozilla/web-ext-action@v2
+      - name: Package extension
+        run: |
+          cd dist/grat-extension/browser
+          zip -r ../../../../extension.zip .
+
+      - name: Deploy to Mozilla Add-ons
+        uses: trmcnvn/firefox-addon@v1
         with:
-          api-key: ${{ secrets.AMO_API_KEY }}
-          api-secret: ${{ secrets.AMO_API_SECRET }}
-          source-dir: dist/grat-extension
-          artifact: extension.zip
-          id: 'teberramzi@gmail.com'
+          uuid: 'teberramzi@gmail.com'
+          xpi: extension.zip
+          manifest: dist/grat-extension/browser/manifest.json
+          api-key: ${{ secrets.AMO_JWT_ISSUER }}
+          api-secret: ${{ secrets.AMO_JWT_SECRET }}
