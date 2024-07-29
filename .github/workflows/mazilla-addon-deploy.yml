@@ -24,7 +24,7 @@ jobs:
 
       - name: Package extension
         run: |
-          if [ ! -f "dist/browser/manifest.json" ]; then
+          if [ ! -f "dist/grat-extension/browser/manifest.json" ]; then
             echo "Error: manifest.json not found in the build output directory."
             exit 1
           fi
