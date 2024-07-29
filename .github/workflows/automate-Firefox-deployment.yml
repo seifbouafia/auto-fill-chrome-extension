@@ -4,8 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches: [ 1-ramzi-deployement ]
-    tags:
-      - 'v*' # Trigger the workflow for tags starting with 'v'
 
 env:
   DIRECTORY: dist
@@ -28,23 +26,35 @@ jobs:
       - name: Create version
         id: create_version
         run: |
+          # Define the path to the version file
           VERSION_FILE="version.txt"
+
+          # Check if the version file exists
           if [ -f "$VERSION_FILE" ]; then
+            # Read the current version from the file
             VERSION=$(cat $VERSION_FILE)
-            # Extract the major, minor, and patch parts of the version
+
+            # Split the version into major, minor, and patch
             IFS='.' read -r -a VERSION_PARTS <<< "$VERSION"
             MAJOR=${VERSION_PARTS[0]}
             MINOR=${VERSION_PARTS[1]}
             PATCH=${VERSION_PARTS[2]}
-            # Increment the patch version
+
+            # Increment the patch version by 1
             PATCH=$((PATCH + 1))
             VERSION="$MAJOR.$MINOR.$PATCH"
+
             echo "Incrementing version to: $VERSION"
           else
+            # Initialize the version if the file does not exist
             VERSION="1.0.0"
             echo "Setting initial version: $VERSION"
           fi
+
+          # Save the new version to the version file
           echo "$VERSION" > $VERSION_FILE
+
+          # Output the version to GitHub Actions
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: List files in dist directory
         run: ls -R $DIRECTORY
