@@ -23,7 +23,11 @@ jobs:
         run: npm run build # Assurez-vous d'avoir une commande de build définie dans votre package.json
 
       - name: Package extension
-        run: zip -r extension.zip . -i dist/browser
+        run: |
+          if [ ! -f "dist/browser/manifest.json" ]; then
+            echo "Error: manifest.json not found in the build output directory."
+            exit 1
+          fi
 
       - name: Deploy to Mozilla Add-ons
         uses: trmcnvn/firefox-addon@v1
