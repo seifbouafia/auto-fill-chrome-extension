@@ -22,6 +22,9 @@ jobs:
       - name: Build extension
         run: npm run build # Assurez-vous d'avoir une commande de build définie dans votre package.json
 
+      - name: Debug build output
+        run: ls -R dist
+
       - name: Package extension
         run: zip -r extension.zip dist
 
