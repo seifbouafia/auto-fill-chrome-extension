@@ -25,24 +25,15 @@ jobs:
       - name: Create version
         id: create_version
         run: |
-          MANIFEST_PATH="$DIRECTORY/grat-extension/browser/manifest.json"
-          if [ -f "$MANIFEST_PATH" ]; then
-            CURRENT_VERSION=$(jq -r '.version' "$MANIFEST_PATH")
-            IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
-            PATCH=${VERSION_PARTS[2]}
-            PATCH=$((PATCH + 1))
-            NEW_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.$PATCH"
-            echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          else
-            echo "Error: manifest.json not found"
-            exit 1
-          fi
+          VERSION=$(date +'%Y.%m.%d' | sed 's/\.0/./g')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: List files in dist directory
         run: ls -R $DIRECTORY
       - name: Update manifest.json
         run: |
+          MANIFEST_PATH="$DIRECTORY/grat-extension/browser/manifest.json"
           if [ -f "$MANIFEST_PATH" ]; then
-            jq ".version = \"${{ steps.create_version.outputs.version }}\"" "$MANIFEST_PATH" > "$MANIFEST_PATH.tmp" && mv "$MANIFEST_PATH.tmp" "$MANIFEST_PATH"
+            sed -i 's/"version":.*/"version": "${{ steps.create_version.outputs.version }}",/' "$MANIFEST_PATH"
             echo "Updated manifest.json version to ${{ steps.create_version.outputs.version }}"
           else
             echo "Error: $MANIFEST_PATH not found"
