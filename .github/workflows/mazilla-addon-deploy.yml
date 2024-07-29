@@ -20,13 +20,16 @@ jobs:
         run: npm ci
 
       - name: Build extension
-        run: npm run build
+        run: npm run build # Assurez-vous d'avoir une commande de build définie dans votre package.json
 
       - name: Debug build output
         run: ls -R dist
 
+      - name: Check manifest.json content
+        run: cat dist/grat-extension/browser/manifest.json
+
       - name: Package extension
-        run: zip -r extension.zip dist/grat-extension/browser
+        run: zip -r extension.zip dist
 
       - name: Deploy to Mozilla Add-ons
         uses: trmcnvn/firefox-addon@v1
