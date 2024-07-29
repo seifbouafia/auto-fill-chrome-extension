@@ -1,0 +1,53 @@
+name: Release Autofill-Form Extension
+on:
+  workflow_dispatch:
+
+env:
+  DIRECTORY: dist
+  PROJECT_NAME: autofill-form
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.create_version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: npm
+      - run: npm ci
+      - name: Build extension
+        run: npm run build
+      - name: Create version
+        id: create_version
+        run: |
+          VERSION=$(date +'%Y.%m.%d')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Update manifest.json
+        run: |
+          sed -i 's/"version":.*/"version": "${{ steps.create_version.outputs.version }}",/' $DIRECTORY/manifest.json
+      - name: Package extension
+        run: |
+          cd $DIRECTORY
+          zip -r ../$PROJECT_NAME-${{ steps.create_version.outputs.version }}.zip .
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension
+          path: ${{ env.PROJECT_NAME }}-${{ steps.create_version.outputs.version }}.zip
+
+  Firefox:
+    needs: Build
+    name: Submit to Firefox Add-ons
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension
+      - name: Sign and submit to Firefox Add-ons
+        run: npx web-ext@8 sign --channel listed --source-dir .
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
