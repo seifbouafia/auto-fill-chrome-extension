@@ -25,8 +25,22 @@ jobs:
       - name: Create version
         id: create_version
         run: |
-          VERSION=$(date +'%Y.%m.%d' | sed 's/\.0/./g')
+          VERSION=$(date +'%Y.%m.%d.%H%M' | sed 's/\.0/./g')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Check existing version and increment if necessary
+        run: |
+          BASE_VERSION=${{ steps.create_version.outputs.version }}
+          PATCH=0
+          while true; do
+            VERSION="${BASE_VERSION}.${PATCH}"
+            if web-ext sign --channel=listed --source-dir $DIRECTORY/grat-extension/browser --api-key=${{ secrets.AMO_JWT_ISSUER }} --api-secret=${{ secrets.AMO_JWT_SECRET }} --dry-run; then
+              echo "version=$VERSION" >> $GITHUB_OUTPUT
+              break
+            else
+              PATCH=$((PATCH + 1))
+            fi
+          done
+        id: check_version
       - name: List files in dist directory
         run: ls -R $DIRECTORY
       - name: Update manifest.json
@@ -64,7 +78,8 @@ jobs:
       - name: Sign and submit to Firefox Add-ons
         run: |
           cd extension_dir/grat-extension/browser
-          web-ext sign --channel listed --source-dir .
+          web-ext sign --channel listed --source-dir . --use-submission-api
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+          WEB_EXT_ID: ${{ secrets.AMO_ADDON_ID }}
