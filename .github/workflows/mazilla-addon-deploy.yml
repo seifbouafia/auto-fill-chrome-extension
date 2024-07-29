@@ -2,8 +2,7 @@ name: Deploy to Mozilla Add-ons
 
 on:
   push:
-    tags:
-      branches: [ deploy-on-addons ]
+    branches: [ deploy-on-addons ]
 
 jobs:
   build-and-submit:
@@ -25,6 +24,7 @@ jobs:
 
       - name: Package extension
         run: zip -r extension.zip dist
+
       - name: Deploy to Mozilla Add-ons
         uses: trmcnvn/firefox-addon@v1
         with:
