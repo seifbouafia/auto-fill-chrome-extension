@@ -25,9 +25,16 @@ jobs:
         run: |
           VERSION=$(date +'%Y.%m.%d')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: List files in dist directory
+        run: ls -R $DIRECTORY
       - name: Update manifest.json
         run: |
-          sed -i 's/"version":.*/"version": "${{ steps.create_version.outputs.version }}",/' $DIRECTORY/manifest.json
+          if [ -f "$DIRECTORY/manifest.json" ]; then
+            sed -i 's/"version":.*/"version": "${{ steps.create_version.outputs.version }}",/' $DIRECTORY/manifest.json
+          else
+            echo "Error: $DIRECTORY/manifest.json not found"
+            exit 1
+          fi
       - name: Package extension
         run: |
           cd $DIRECTORY
@@ -47,7 +54,7 @@ jobs:
         with:
           name: extension
       - name: Sign and submit to Firefox Add-ons
-        run: npx web-ext@8 sign --channel listed --source-dir .
+        run: npx web-ext sign --channel listed --source-dir .
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
