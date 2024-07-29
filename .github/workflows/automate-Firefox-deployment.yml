@@ -1,5 +1,4 @@
 name: Release Autofill-Form Extension
-
 on:
   workflow_dispatch:
   push:
@@ -26,7 +25,6 @@ jobs:
       - name: Create version
         id: create_version
         run: |
-          # Read the current version from manifest.json
           MANIFEST_PATH="$DIRECTORY/grat-extension/browser/manifest.json"
           if [ -f "$MANIFEST_PATH" ]; then
             CURRENT_VERSION=$(jq -r '.version' "$MANIFEST_PATH")
@@ -34,12 +32,11 @@ jobs:
             PATCH=${VERSION_PARTS[2]}
             PATCH=$((PATCH + 1))
             NEW_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.$PATCH"
-            echo "New version: $NEW_VERSION"
+            echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
           else
             echo "Error: manifest.json not found"
             exit 1
           fi
-          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
       - name: List files in dist directory
         run: ls -R $DIRECTORY
       - name: Update manifest.json
