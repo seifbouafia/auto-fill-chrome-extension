@@ -60,8 +60,14 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: extension
+      - name: Install web-ext
+        run: npm install -g web-ext@latest
+      - name: Unzip extension
+        run: unzip ${{ env.PROJECT_NAME }}-${{ needs.Build.outputs.version }}.zip -d extension_dir
       - name: Sign and submit to Firefox Add-ons
-        run: npx web-ext sign --channel listed --source-dir .
+        run: |
+          cd extension_dir/grat-extension/browser
+          web-ext sign --channel listed --source-dir .
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
