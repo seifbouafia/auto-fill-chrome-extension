@@ -20,7 +20,7 @@ jobs:
         run: npm ci
 
       - name: Build extension
-        run: npm run build # Assurez-vous d'avoir une commande de build définie dans votre package.json
+        run: npm run build
 
       - name: Debug build output
         run: ls -R dist
