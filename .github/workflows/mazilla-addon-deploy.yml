@@ -3,7 +3,7 @@ name: Deploy to Mozilla Add-ons
 on:
   push:
     tags:
-      - 'v*'
+      branches: [ deploy-on-addons ]
 
 jobs:
   build-and-submit:
@@ -21,25 +21,15 @@ jobs:
         run: npm ci
 
       - name: Build extension
-        run: npm run build
+        run: npm run build # Assurez-vous d'avoir une commande de build définie dans votre package.json
 
-      - name: Verify manifest.json presence
-        run: |
-          if [ ! -f "dist/manifest.json" ]; then
-            echo "Error: manifest.json not found in the build output directory."
-            exit 1
-          fi
-
-      - name: Create ZIP file
-        run: |
-          cd dist
-          zip -r ../extension.zip . -x '*.git*'
-          cd ..
-
-      - name: Submit to Mozilla Add-ons
-        env:
-          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
-          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
-        run: |
-          npm install --global web-ext
-          web-ext sign --source-dir ./dist --artifacts-dir ./web-ext-artifacts/
+      - name: Package extension
+        run: zip -r extension.zip dist
+      - name: Deploy to Mozilla Add-ons
+        uses: trmcnvn/firefox-addon@v1
+        with:
+          uuid: 'teberramzi@gmail.com'
+          xpi: extension.zip
+          manifest: dist/manifest.json
+          api-key: ${{ secrets.FIREFOX_API_KEY }}
+          api-secret: ${{ secrets.FIREFOX_API_SECRET }}
