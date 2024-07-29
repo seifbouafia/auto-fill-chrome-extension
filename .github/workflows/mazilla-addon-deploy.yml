@@ -2,6 +2,8 @@ name: Deploy to Mozilla Add-ons
 
 on:
   push:
+    branches:
+      - ramzi-deployement
     tags:
       - 'v*'
 
