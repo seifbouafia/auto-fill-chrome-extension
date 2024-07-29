@@ -3,7 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches: [ 1-ramzi-deployement ]
-
+    tags:
+      - 'v*' # Déclenche le workflow pour les tags commençant par 'v'
 env:
   DIRECTORY: dist
   PROJECT_NAME: autofill-form
