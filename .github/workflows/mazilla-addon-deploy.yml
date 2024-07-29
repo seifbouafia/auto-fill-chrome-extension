@@ -31,5 +31,5 @@ jobs:
           uuid: 'teberramzi@gmail.com'
           xpi: extension.zip
           manifest: dist/manifest.json
-          api-key: ${{ secrets.FIREFOX_API_KEY }}
-          api-secret: ${{ secrets.FIREFOX_API_SECRET }}
+          api-key: ${{ secrets.AMO_JWT_ISSUER }}
+          api-secret: ${{ secrets.AMO_JWT_SECRET }}
