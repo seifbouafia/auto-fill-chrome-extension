@@ -33,6 +33,6 @@ jobs:
         with:
           uuid: 'teberramzi@gmail.com'
           xpi: extension.zip
-          manifest: dist/manifest.json
+          manifest: dist/grat-extension/browser/manifest.json
           api-key: ${{ secrets.AMO_JWT_ISSUER }}
           api-secret: ${{ secrets.AMO_JWT_SECRET }}
