@@ -1,45 +1,75 @@
 name: Release Autofill-Form Extension
-
 on:
   workflow_dispatch:
+  push:
+    branches: [ 1-ramzi-deployement ]
 
 env:
+  DIRECTORY: dist
   PROJECT_NAME: autofill-form
 
 jobs:
-  build-and-submit:
+  Build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.create_version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: package.json
           cache: npm
-
-      - name: Install dependencies and build
+      - run: npm ci
+      - name: Build extension
+        run: npm run build
+      - name: Create version
+        id: create_version
         run: |
-          npm ci
-          npm run build
-
-      - name: Increment version and update manifest
-        id: version
+          MANIFEST_PATH="$DIRECTORY/grat-extension/browser/manifest.json"
+          if [ -f "$MANIFEST_PATH" ]; then
+            CURRENT_VERSION=$(jq -r '.version' "$MANIFEST_PATH")
+            IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
+            PATCH=${VERSION_PARTS[2]}
+            PATCH=$((PATCH + 1))
+            NEW_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.$PATCH"
+            echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "Error: manifest.json not found"
+            exit 1
+          fi
+      - name: List files in dist directory
+        run: ls -R $DIRECTORY
+      - name: Update manifest.json
         run: |
-          MANIFEST_PATH="dist/grat-extension/browser/manifest.json"
-          CURRENT_VERSION=$(jq -r '.version' "$MANIFEST_PATH")
-          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
-          ((VERSION_PARTS[2]++))
-          NEW_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.${VERSION_PARTS[2]}"
-          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          jq ".version = \"$NEW_VERSION\"" "$MANIFEST_PATH" > temp.json && mv temp.json "$MANIFEST_PATH"
-          echo "Version incremented from $CURRENT_VERSION to $NEW_VERSION"
-
+          jq ".version = \"${{ steps.create_version.outputs.version }}\"" "$MANIFEST_PATH" > "$MANIFEST_PATH.tmp" && mv "$MANIFEST_PATH.tmp" "$MANIFEST_PATH"
+          echo "Updated manifest.json version to ${{ steps.create_version.outputs.version }}"
       - name: Package extension
         run: |
-          cd dist
-          zip -r ../${{ env.PROJECT_NAME }}-${{ steps.version.outputs.version }}.zip .
+          cd $DIRECTORY
+          zip -r ../$PROJECT_NAME-${{ steps.create_version.outputs.version }}.zip .
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension
+          path: ${{ env.PROJECT_NAME }}-${{ steps.create_version.outputs.version }}.zip
 
+  Firefox:
+    needs: Build
+    name: Submit to Firefox Add-ons
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension
+      - name: Install web-ext
+        run: npm install -g web-ext@latest
+      - name: Unzip extension
+        run: unzip ${{ env.PROJECT_NAME }}-${{ needs.Build.outputs.version }}.zip -d extension_dir
       - name: Sign and submit to Firefox Add-ons
-        run: npx web-ext sign --channel listed --source-dir .
+        run: |
+          cd extension_dir/grat-extension/browser
+          web-ext sign --channel listed --source-dir .
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+
