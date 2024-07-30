@@ -1,8 +1,6 @@
 name: Release Autofill-Form Extension
 on:
   workflow_dispatch:
-  push:
-    branches: [ 1-ramzi-deployement ]
 
 env:
   DIRECTORY: dist
@@ -25,24 +23,23 @@ jobs:
       - name: Create version
         id: create_version
         run: |
-          MANIFEST_PATH="$DIRECTORY/grat-extension/browser/manifest.json"
-          if [ -f "$MANIFEST_PATH" ]; then
-            CURRENT_VERSION=$(jq -r '.version' "$MANIFEST_PATH")
-            IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
-            PATCH=${VERSION_PARTS[2]}
-            PATCH=$((PATCH + 1))
-            NEW_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.$PATCH"
-            echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          else
-            echo "Error: manifest.json not found"
-            exit 1
-          fi
+          VERSION=$(date +'%Y.%m.%d')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: List files in dist directory
         run: ls -R $DIRECTORY
       - name: Update manifest.json
         run: |
-          jq ".version = \"${{ steps.create_version.outputs.version }}\"" "$MANIFEST_PATH" > "$MANIFEST_PATH.tmp" && mv "$MANIFEST_PATH.tmp" "$MANIFEST_PATH"
-          echo "Updated manifest.json version to ${{ steps.create_version.outputs.version }}"
+          MANIFEST_PATH="$DIRECTORY/grat-extension/browser/manifest.json"
+          if [ -f "$MANIFEST_PATH" ]; then
+            sed -i 's/"version":.*/"version": "${{ steps.create_version.outputs.version }}",/' "$MANIFEST_PATH"
+            echo "Updated manifest.json version to ${{ steps.create_version.outputs.version }}"
+          else
+            echo "Error: $MANIFEST_PATH not found"
+            exit 1
+          fi
+        env:
+          DIRECTORY: dist
+          PROJECT_NAME: autofill-form
       - name: Package extension
         run: |
           cd $DIRECTORY
@@ -61,14 +58,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: extension
-      - name: Install web-ext
-        run: npm install -g web-ext@latest
-      - name: Unzip extension
-        run: unzip ${{ env.PROJECT_NAME }}-${{ needs.Build.outputs.version }}.zip -d extension_dir
       - name: Sign and submit to Firefox Add-ons
-        run: |
-          cd extension_dir/grat-extension/browser
-          web-ext sign --channel listed --source-dir .
+        run: npx web-ext sign --channel listed --source-dir .
         env:
           WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
